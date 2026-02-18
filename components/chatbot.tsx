@@ -6,11 +6,13 @@ import {
   STARTUP_STAGES,
   SUPPORT_TYPES,
   USER_TYPES,
+  CATEGORY_META,
   getRecommendations,
   type StartupStage,
   type SupportType,
   type UserType,
   type Resource,
+  type ResourceCategory,
 } from "@/lib/resources"
 import {
   Lightbulb,
@@ -26,6 +28,7 @@ import {
   RotateCcw,
   ArrowRight,
   BookOpen,
+  Filter,
 } from "lucide-react"
 
 type Step = "greeting" | "stage" | "support" | "user-type" | "results"
@@ -69,13 +72,20 @@ function StepIndicator({ currentStep }: { currentStep: Step }) {
                 className={cn(
                   "size-5 rounded-full flex items-center justify-center text-[10px] font-bold transition-all duration-300 shrink-0",
                   isComplete && "bg-primary text-primary-foreground",
-                  isCurrent && "bg-primary text-primary-foreground ring-2 ring-primary/30 ring-offset-1 ring-offset-card",
+                  isCurrent &&
+                    "bg-primary text-primary-foreground ring-2 ring-primary/30 ring-offset-1 ring-offset-card",
                   !isComplete && !isCurrent && "bg-muted text-muted-foreground"
                 )}
               >
                 {isComplete ? (
                   <svg className="size-3" viewBox="0 0 12 12" fill="none">
-                    <path d="M2.5 6L5 8.5L9.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    <path
+                      d="M2.5 6L5 8.5L9.5 3.5"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
                   </svg>
                 ) : (
                   i + 1
@@ -84,7 +94,11 @@ function StepIndicator({ currentStep }: { currentStep: Step }) {
               <span
                 className={cn(
                   "text-[11px] font-medium transition-colors hidden sm:block",
-                  isCurrent ? "text-foreground" : isComplete ? "text-primary" : "text-muted-foreground"
+                  isCurrent
+                    ? "text-foreground"
+                    : isComplete
+                      ? "text-primary"
+                      : "text-muted-foreground"
                 )}
               >
                 {STEP_LABELS[i]}
@@ -105,12 +119,61 @@ function StepIndicator({ currentStep }: { currentStep: Step }) {
   )
 }
 
+// ── Category filter bar shown on results screen ──────────────────────────
+function CategoryFilterBar({
+  categories,
+  counts,
+  activeFilter,
+  onFilter,
+}: {
+  categories: ResourceCategory[]
+  counts: Record<ResourceCategory, number>
+  activeFilter: ResourceCategory | "all"
+  onFilter: (cat: ResourceCategory | "all") => void
+}) {
+  return (
+    <div className="flex flex-wrap gap-1.5 pt-1 pb-2 animate-in fade-in duration-300">
+      <button
+        onClick={() => onFilter("all")}
+        className={cn(
+          "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-medium transition-all cursor-pointer",
+          activeFilter === "all"
+            ? "bg-primary text-primary-foreground shadow-sm"
+            : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+        )}
+      >
+        <Filter className="size-3" />
+        All ({Object.values(counts).reduce((a, b) => a + b, 0)})
+      </button>
+      {categories.map((cat) => {
+        const meta = CATEGORY_META[cat]
+        return (
+          <button
+            key={cat}
+            onClick={() => onFilter(cat)}
+            className={cn(
+              "inline-flex items-center rounded-full px-3 py-1 text-[11px] font-medium transition-all cursor-pointer",
+              activeFilter === cat
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+            )}
+          >
+            {meta.label} ({counts[cat]})
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+// ── Main chatbot component ───────────────────────────────────────────────
 export function Chatbot() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "greeting",
       role: "bot",
-      content: "Hey there! I'm here to help you find the best McMaster resources for your startup journey. Let's get started!",
+      content:
+        "Hey there! I'm here to help you find the best McMaster resources for your startup journey. Let's get started!",
     },
     {
       id: "stage-question",
@@ -122,6 +185,7 @@ export function Chatbot() {
   const [stage, setStage] = useState<StartupStage | null>(null)
   const [support, setSupport] = useState<SupportType | null>(null)
   const [results, setResults] = useState<Resource[]>([])
+  const [categoryFilter, setCategoryFilter] = useState<ResourceCategory | "all">("all")
   const [isTyping, setIsTyping] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
 
@@ -129,19 +193,22 @@ export function Chatbot() {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight
     }
-  }, [messages, isTyping, results])
+  }, [messages, isTyping, results, categoryFilter])
 
-  const addMessages = useCallback((botContent: string, nextStep: Step) => {
-    setIsTyping(true)
-    setTimeout(() => {
-      setMessages((prev) => [
-        ...prev,
-        { id: `bot-${Date.now()}`, role: "bot", content: botContent },
-      ])
-      setIsTyping(false)
-      setCurrentStep(nextStep)
-    }, 700)
-  }, [])
+  const addMessages = useCallback(
+    (botContent: string, nextStep: Step) => {
+      setIsTyping(true)
+      setTimeout(() => {
+        setMessages((prev) => [
+          ...prev,
+          { id: `bot-${Date.now()}`, role: "bot", content: botContent },
+        ])
+        setIsTyping(false)
+        setCurrentStep(nextStep)
+      }, 700)
+    },
+    []
+  )
 
   function handleStageSelect(selected: StartupStage) {
     const label = STARTUP_STAGES.find((s) => s.value === selected)?.label ?? ""
@@ -151,7 +218,10 @@ export function Chatbot() {
       { id: `user-stage-${Date.now()}`, role: "user", content: label },
     ])
     setCurrentStep("greeting")
-    addMessages("Nice! Now, what type of support would help you most right now?", "support")
+    addMessages(
+      "Nice! Now, what type of support would help you most right now?",
+      "support"
+    )
   }
 
   function handleSupportSelect(selected: SupportType) {
@@ -162,7 +232,10 @@ export function Chatbot() {
       { id: `user-support-${Date.now()}`, role: "user", content: label },
     ])
     setCurrentStep("greeting")
-    addMessages("Last question -- are you a current McMaster student or alumni?", "user-type")
+    addMessages(
+      "Last question -- are you a current McMaster student or alumni?",
+      "user-type"
+    )
   }
 
   function handleUserTypeSelect(selected: UserType) {
@@ -177,7 +250,19 @@ export function Chatbot() {
     setTimeout(() => {
       const recs = getRecommendations(stage!, support!, selected)
       setResults(recs)
+      setCategoryFilter("all")
       const count = recs.length
+
+      // Build a category summary string
+      const catCounts: Partial<Record<ResourceCategory, number>> = {}
+      recs.forEach((r) => {
+        catCounts[r.category] = (catCounts[r.category] ?? 0) + 1
+      })
+      const summaryParts = Object.entries(catCounts).map(
+        ([cat, n]) =>
+          `${n} ${CATEGORY_META[cat as ResourceCategory].label.toLowerCase()}${n > 1 ? "s" : ""}`
+      )
+
       setMessages((prev) => [
         ...prev,
         {
@@ -185,8 +270,8 @@ export function Chatbot() {
           role: "bot",
           content:
             count > 0
-              ? `I found ${count} resource${count > 1 ? "s" : ""} tailored to your profile. Here they are:`
-              : "I couldn't find exact matches for your criteria. Try broadening your search!",
+              ? `Great news! I found ${count} resource${count > 1 ? "s" : ""} for you -- ${summaryParts.join(", ")}. Use the filters to narrow down:`
+              : "I couldn't find exact matches for your criteria. Try broadening your search with different options!",
         },
       ])
       setIsTyping(false)
@@ -198,28 +283,50 @@ export function Chatbot() {
     setStage(null)
     setSupport(null)
     setResults([])
+    setCategoryFilter("all")
     setCurrentStep("stage")
     setMessages([
       {
         id: `restart-${Date.now()}`,
         role: "bot",
-        content: "Let's explore more resources! What stage is your startup at?",
+        content:
+          "Let's explore more resources! What stage is your startup at?",
       },
     ])
   }
 
+  // Derive category data for filters
+  const categoriesInResults = Array.from(
+    new Set(results.map((r) => r.category))
+  ) as ResourceCategory[]
+  const categoryCounts = categoriesInResults.reduce(
+    (acc, cat) => {
+      acc[cat] = results.filter((r) => r.category === cat).length
+      return acc
+    },
+    {} as Record<ResourceCategory, number>
+  )
+  const filteredResults =
+    categoryFilter === "all"
+      ? results
+      : results.filter((r) => r.category === categoryFilter)
+
   const showOptions = !isTyping && currentStep !== "greeting"
 
   return (
-    <div className="flex flex-col h-full max-h-[720px] bg-card rounded-2xl border border-border shadow-xl overflow-hidden">
+    <div className="flex flex-col h-full max-h-[760px] bg-card rounded-2xl border border-border shadow-xl overflow-hidden">
       {/* Header */}
       <div className="flex items-center gap-3 px-5 py-3.5 bg-primary text-primary-foreground">
         <div className="flex items-center justify-center size-9 rounded-full bg-primary-foreground/15 backdrop-blur-sm">
           <Rocket className="size-5" />
         </div>
         <div className="flex-1 min-w-0">
-          <h2 className="text-sm font-semibold leading-tight">Mac Startup Guide</h2>
-          <p className="text-xs text-primary-foreground/70">McMaster Entrepreneur Resources</p>
+          <h2 className="text-sm font-semibold leading-tight">
+            Mac Startup Guide
+          </h2>
+          <p className="text-xs text-primary-foreground/70">
+            McMaster Entrepreneur Resources
+          </p>
         </div>
         <div className="flex items-center gap-1.5">
           <span className="size-2 rounded-full bg-green-400 animate-pulse" />
@@ -231,7 +338,10 @@ export function Chatbot() {
       <StepIndicator currentStep={currentStep} />
 
       {/* Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-5 flex flex-col gap-3">
+      <div
+        ref={scrollRef}
+        className="flex-1 overflow-y-auto px-4 py-5 flex flex-col gap-3"
+      >
         {messages.map((msg, index) => (
           <ChatBubble
             key={msg.id}
@@ -247,10 +357,27 @@ export function Chatbot() {
 
         {/* Resource Results */}
         {currentStep === "results" && !isTyping && results.length > 0 && (
-          <div className="flex flex-col gap-2.5 pt-1 animate-in fade-in slide-in-from-bottom-2 duration-400">
-            {results.map((resource, i) => (
+          <div className="flex flex-col gap-2 pt-1 animate-in fade-in slide-in-from-bottom-2 duration-400">
+            {/* Category filter bar */}
+            {categoriesInResults.length > 1 && (
+              <CategoryFilterBar
+                categories={categoriesInResults}
+                counts={categoryCounts}
+                activeFilter={categoryFilter}
+                onFilter={setCategoryFilter}
+              />
+            )}
+
+            {/* Result cards */}
+            {filteredResults.map((resource, i) => (
               <ResourceCard key={resource.name} resource={resource} index={i} />
             ))}
+
+            {filteredResults.length === 0 && (
+              <p className="text-xs text-muted-foreground text-center py-3">
+                No resources in this category. Try another filter.
+              </p>
+            )}
           </div>
         )}
       </div>
@@ -324,6 +451,8 @@ export function Chatbot() {
   )
 }
 
+// ── Sub-components ───────────────────────────────────────────────────────
+
 function ChatBubble({
   role,
   children,
@@ -376,12 +505,20 @@ function TypingIndicator() {
   )
 }
 
-function OptionGrid({ children, columns = 2 }: { children: React.ReactNode; columns?: number }) {
+function OptionGrid({
+  children,
+  columns = 2,
+}: {
+  children: React.ReactNode
+  columns?: number
+}) {
   return (
     <div
       className={cn(
         "grid gap-2 animate-in fade-in slide-in-from-bottom-2 duration-300",
-        columns === 2 ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1 sm:grid-cols-2"
+        columns === 2
+          ? "grid-cols-1 sm:grid-cols-2"
+          : "grid-cols-1 sm:grid-cols-2"
       )}
     >
       {children}
@@ -413,25 +550,44 @@ function OptionButton({
           {label}
           <ArrowRight className="size-3 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all text-primary" />
         </p>
-        <p className="text-xs text-muted-foreground mt-0.5 leading-snug">{description}</p>
+        <p className="text-xs text-muted-foreground mt-0.5 leading-snug">
+          {description}
+        </p>
       </div>
     </button>
   )
 }
 
-function ResourceCard({ resource, index }: { resource: Resource; index: number }) {
+function ResourceCard({
+  resource,
+  index,
+}: {
+  resource: Resource
+  index: number
+}) {
+  const catMeta = CATEGORY_META[resource.category]
   return (
     <a
       href={resource.url}
       target="_blank"
       rel="noopener noreferrer"
-      className="group block rounded-xl border border-border bg-card p-4 transition-all hover:border-primary/40 hover:shadow-md"
-      style={{ animationDelay: `${index * 80}ms` }}
+      className="group block rounded-xl border border-border bg-card p-4 transition-all hover:border-primary/40 hover:shadow-md animate-in fade-in slide-in-from-bottom-1 duration-300"
+      style={{ animationDelay: `${index * 60}ms` }}
     >
       <div className="flex items-start justify-between gap-2">
-        <h3 className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
-          {resource.name}
-        </h3>
+        <div className="flex items-center gap-2 flex-wrap">
+          <h3 className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
+            {resource.name}
+          </h3>
+          <span
+            className={cn(
+              "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold leading-none",
+              catMeta.color
+            )}
+          >
+            {catMeta.label}
+          </span>
+        </div>
         <ExternalLink className="size-3.5 shrink-0 text-muted-foreground group-hover:text-primary transition-colors mt-0.5" />
       </div>
       <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
@@ -441,19 +597,10 @@ function ResourceCard({ resource, index }: { resource: Resource; index: number }
         {resource.tags.support.map((tag) => (
           <span
             key={tag}
-            className="inline-flex items-center gap-1 rounded-full bg-primary/8 px-2.5 py-0.5 text-[10px] font-medium text-primary capitalize"
+            className="inline-flex items-center gap-1 rounded-full bg-primary/8 px-2 py-0.5 text-[10px] font-medium text-primary capitalize"
           >
             {SUPPORT_ICONS[tag]}
             {tag}
-          </span>
-        ))}
-        {resource.tags.stages.map((stg) => (
-          <span
-            key={stg}
-            className="inline-flex items-center gap-1 rounded-full bg-accent/15 px-2.5 py-0.5 text-[10px] font-medium text-accent-foreground capitalize"
-          >
-            {STAGE_ICONS[stg]}
-            {stg}
           </span>
         ))}
       </div>
