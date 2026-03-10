@@ -1,14 +1,14 @@
 import { Chatbot } from "@/components/chatbot"
-import { Rocket } from "lucide-react"
+import { Sparkles } from "lucide-react"
 
 export default function Page() {
   return (
     <main className="min-h-screen bg-background flex flex-col">
       {/* Top bar */}
-      <header className="border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-10">
+      <header className="border-b border-border/50 bg-card/80 backdrop-blur-sm sticky top-0 z-10">
         <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-3">
-          <div className="flex items-center justify-center size-8 rounded-lg bg-primary text-primary-foreground">
-            <Rocket className="size-4" />
+          <div className="flex items-center justify-center size-9 rounded-xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-sm">
+            <span className="text-sm font-bold">M</span>
           </div>
           <div>
             <span className="text-sm font-semibold text-foreground">McMaster</span>
@@ -21,17 +21,17 @@ export default function Page() {
         {/* Hero section */}
         <section className="mx-auto max-w-5xl px-4 pt-10 md:pt-14 pb-6 md:pb-8 text-center">
           <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-xs font-medium text-primary mb-5">
-            <span className="size-1.5 rounded-full bg-primary animate-pulse" />
-            Powered by McMaster Innovation
+            <Sparkles className="size-3.5" />
+            Your startup journey starts here
           </div>
           <h1 className="text-3xl md:text-4xl font-bold text-foreground text-balance leading-tight">
-            Find the Right Resources for
+            Hey, Future Founder!
             <br />
-            <span className="text-primary">Your Startup Journey</span>
+            <span className="text-primary">{"Let's Find Your Resources"}</span>
           </h1>
-          <p className="mt-3 text-muted-foreground max-w-md mx-auto leading-relaxed text-sm text-pretty">
-            Answer three quick questions and our chatbot will match you with
-            McMaster programs, funding, mentorship, and more.
+          <p className="mt-4 text-muted-foreground max-w-md mx-auto leading-relaxed text-sm text-pretty">
+            Chat with Mac, our friendly guide, and discover workshops, funding,
+            events, and more - all tailored just for you.
           </p>
         </section>
 
@@ -42,8 +42,13 @@ export default function Page() {
       </div>
 
       {/* Footer */}
-      <footer className="border-t border-border py-5 text-center text-xs text-muted-foreground">
-        McMaster University &middot; Hamilton, ON &middot; Entrepreneur Resource Finder
+      <footer className="border-t border-border/50 py-6 text-center">
+        <p className="text-xs text-muted-foreground">
+          Made with care for McMaster entrepreneurs
+        </p>
+        <p className="text-[11px] text-muted-foreground/70 mt-1">
+          Hamilton, ON
+        </p>
       </footer>
     </main>
   )

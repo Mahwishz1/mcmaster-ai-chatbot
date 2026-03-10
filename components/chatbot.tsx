@@ -27,8 +27,10 @@ import {
   BookOpen,
   Mic,
   Calendar,
-  Filter,
   ChevronDown,
+  Sparkles,
+  Heart,
+  PartyPopper,
 } from "lucide-react"
 
 type Step = "greeting" | "stage" | "support" | "user-type" | "results"
@@ -55,13 +57,29 @@ const SUPPORT_ICONS: Record<SupportType, React.ReactNode> = {
 const STEPS_ORDER: Step[] = ["stage", "support", "user-type", "results"]
 const STEP_LABELS = ["Stage", "Support", "Status", "Results"]
 
+// Friendly encouragement messages
+const STAGE_RESPONSES = [
+  "Awesome! Love to hear it.",
+  "Great choice!",
+  "Perfect, got it!",
+]
+const SUPPORT_RESPONSES = [
+  "That's a great area to focus on!",
+  "Smart thinking!",
+  "Good call!",
+]
+
+function getRandomResponse(arr: string[]) {
+  return arr[Math.floor(Math.random() * arr.length)]
+}
+
 // ── Step Progress Indicator ──────────────────────────────────────────────
 
 function StepIndicator({ currentStep }: { currentStep: Step }) {
   const currentIndex = STEPS_ORDER.indexOf(currentStep)
 
   return (
-    <div className="flex items-center gap-1 px-5 py-3 border-b border-border/50 bg-card">
+    <div className="flex items-center gap-1 px-5 py-3 border-b border-border/40 bg-gradient-to-r from-card to-secondary/30">
       {STEPS_ORDER.map((step, i) => {
         const isComplete = i < currentIndex
         const isCurrent = step === currentStep
@@ -73,7 +91,7 @@ function StepIndicator({ currentStep }: { currentStep: Step }) {
                   "size-6 rounded-full flex items-center justify-center text-[10px] font-bold transition-all duration-300 shrink-0",
                   isComplete && "bg-primary text-primary-foreground",
                   isCurrent &&
-                    "bg-primary text-primary-foreground ring-2 ring-primary/30 ring-offset-1 ring-offset-card",
+                    "bg-primary text-primary-foreground ring-2 ring-primary/30 ring-offset-2 ring-offset-card shadow-sm",
                   !isComplete && !isCurrent && "bg-muted text-muted-foreground"
                 )}
               >
@@ -127,12 +145,12 @@ export function Chatbot() {
       id: "greeting",
       role: "bot",
       content:
-        "Hey there! I'm here to help you find the best McMaster resources for your startup journey. Let's get started!",
+        "Hi there! I'm Mac, your friendly startup guide. I'm excited to help you discover amazing resources at McMaster!",
     },
     {
       id: "stage-question",
       role: "bot",
-      content: "What stage is your startup at?",
+      content: "First up - where are you on your startup journey?",
     },
   ])
   const [currentStep, setCurrentStep] = useState<Step>("stage")
@@ -160,7 +178,7 @@ export function Chatbot() {
         ])
         setIsTyping(false)
         setCurrentStep(nextStep)
-      }, 700)
+      }, 800)
     },
     []
   )
@@ -174,7 +192,7 @@ export function Chatbot() {
     ])
     setCurrentStep("greeting")
     addMessages(
-      "Great choice! What type of support are you looking for?",
+      `${getRandomResponse(STAGE_RESPONSES)} Now, what kind of support would be most helpful for you right now?`,
       "support"
     )
   }
@@ -188,7 +206,7 @@ export function Chatbot() {
     ])
     setCurrentStep("greeting")
     addMessages(
-      "Last question -- are you a current McMaster student or alumni?",
+      `${getRandomResponse(SUPPORT_RESPONSES)} One last thing - are you currently a student or an alum?`,
       "user-type"
     )
   }
@@ -219,15 +237,15 @@ export function Chatbot() {
 
       let resultMsg: string
       if (count > 0) {
-        resultMsg = `I found ${count} ${catLabel}${count > 1 ? "s" : ""} matching your criteria!`
+        resultMsg = `Wonderful! I found ${count} ${catLabel}${count > 1 ? "s" : ""} that I think you'll love!`
         if (other.length > 0) {
-          resultMsg += ` Plus ${other.length} other resource${other.length > 1 ? "s" : ""} that might interest you.`
+          resultMsg += ` Plus ${other.length} bonus resource${other.length > 1 ? "s" : ""} you might want to check out.`
         }
       } else if (other.length > 0) {
-        resultMsg = `I didn't find exact ${catLabel} matches, but here are ${other.length} other resource${other.length > 1 ? "s" : ""} available for your stage and status:`
+        resultMsg = `I didn't find exact ${catLabel} matches, but don't worry - here are ${other.length} other great resource${other.length > 1 ? "s" : ""} for you:`
       } else {
         resultMsg =
-          "I couldn't find any resources matching your exact criteria. Try broadening your search with different options!"
+          "Hmm, I couldn't find resources matching that exact combo. But don't give up! Try different options - there's something for everyone."
       }
 
       setMessages((prev) => [
@@ -236,7 +254,7 @@ export function Chatbot() {
       ])
       setIsTyping(false)
       setCurrentStep("results")
-    }, 900)
+    }, 1000)
   }
 
   function handleRestart() {
@@ -251,35 +269,37 @@ export function Chatbot() {
         id: `restart-${Date.now()}`,
         role: "bot",
         content:
-          "Let's explore more resources! What stage is your startup at?",
+          "Ready for another round? Let's find you even more amazing resources! What stage is your startup at?",
       },
     ])
   }
 
   const showOptions = !isTyping && currentStep !== "greeting"
 
-  // When no primary results, show other results directly
   const displayPrimary = results
   const displayOther = otherResults
 
   return (
-    <div className="flex flex-col h-full max-h-[760px] bg-card rounded-2xl border border-border shadow-xl overflow-hidden">
+    <div className="flex flex-col h-full max-h-[760px] bg-card rounded-3xl border border-border/60 shadow-xl overflow-hidden">
       {/* Header */}
-      <div className="flex items-center gap-3 px-5 py-3.5 bg-primary text-primary-foreground">
-        <div className="flex items-center justify-center size-9 rounded-full bg-primary-foreground/15 backdrop-blur-sm">
-          <Rocket className="size-5" />
+      <div className="flex items-center gap-3 px-5 py-4 bg-gradient-to-r from-primary to-primary/90 text-primary-foreground">
+        <div className="relative">
+          <div className="flex items-center justify-center size-11 rounded-2xl bg-primary-foreground/20 backdrop-blur-sm shadow-inner">
+            <span className="text-xl">M</span>
+          </div>
+          <span className="absolute -bottom-0.5 -right-0.5 text-sm">👋</span>
         </div>
         <div className="flex-1 min-w-0">
-          <h2 className="text-sm font-semibold leading-tight">
+          <h2 className="text-base font-semibold leading-tight">
             Mac Startup Guide
           </h2>
-          <p className="text-xs text-primary-foreground/70">
-            McMaster Entrepreneur Resources
+          <p className="text-xs text-primary-foreground/80">
+            Here to help you succeed!
           </p>
         </div>
-        <div className="flex items-center gap-1.5">
-          <span className="size-2 rounded-full bg-green-400 animate-pulse" />
-          <span className="text-xs text-primary-foreground/70">Online</span>
+        <div className="flex items-center gap-1.5 bg-primary-foreground/15 rounded-full px-2.5 py-1">
+          <span className="size-2 rounded-full bg-emerald-400 animate-pulse" />
+          <span className="text-xs text-primary-foreground/90">Online</span>
         </div>
       </div>
 
@@ -289,7 +309,7 @@ export function Chatbot() {
       {/* Messages */}
       <div
         ref={scrollRef}
-        className="flex-1 overflow-y-auto px-4 py-5 flex flex-col gap-3"
+        className="flex-1 overflow-y-auto px-4 py-5 flex flex-col gap-3 bg-gradient-to-b from-background/50 to-background"
       >
         {messages.map((msg, index) => (
           <ChatBubble
@@ -306,7 +326,18 @@ export function Chatbot() {
 
         {/* Resource Results */}
         {currentStep === "results" && !isTyping && (
-          <div className="flex flex-col gap-2.5 pt-1 animate-in fade-in slide-in-from-bottom-2 duration-400">
+          <div className="flex flex-col gap-3 pt-2 animate-in fade-in slide-in-from-bottom-2 duration-400">
+            {/* Success celebration for results */}
+            {displayPrimary.length > 0 && (
+              <div className="flex items-center justify-center gap-2 py-2">
+                <PartyPopper className="size-4 text-accent" />
+                <span className="text-xs font-medium text-muted-foreground">
+                  Here are your personalized recommendations
+                </span>
+                <PartyPopper className="size-4 text-accent scale-x-[-1]" />
+              </div>
+            )}
+
             {/* Primary results */}
             {displayPrimary.length > 0 && (
               <>
@@ -322,12 +353,15 @@ export function Chatbot() {
 
             {/* No results message */}
             {displayPrimary.length === 0 && displayOther.length === 0 && (
-              <div className="text-center py-6">
-                <div className="inline-flex items-center justify-center size-12 rounded-full bg-muted mb-3">
-                  <Filter className="size-5 text-muted-foreground" />
+              <div className="text-center py-8 px-4">
+                <div className="inline-flex items-center justify-center size-14 rounded-2xl bg-muted mb-4">
+                  <Sparkles className="size-6 text-muted-foreground" />
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  No resources found for this combination.
+                <p className="text-sm font-medium text-foreground mb-1">
+                  No matches found
+                </p>
+                <p className="text-xs text-muted-foreground max-w-[240px] mx-auto">
+                  Try a different combination - your perfect resource is out there!
                 </p>
               </div>
             )}
@@ -337,20 +371,23 @@ export function Chatbot() {
               <div className="mt-1">
                 <button
                   onClick={() => setShowOther(!showOther)}
-                  className="flex items-center gap-2 w-full rounded-xl border border-dashed border-border bg-muted/40 px-4 py-3 text-xs font-medium text-muted-foreground transition-all hover:bg-muted hover:text-foreground cursor-pointer"
+                  className="flex items-center gap-2 w-full rounded-2xl border border-dashed border-primary/30 bg-primary/5 px-4 py-3.5 text-xs font-medium text-primary transition-all hover:bg-primary/10 hover:border-primary/50 cursor-pointer"
                 >
+                  <Sparkles className="size-3.5" />
+                  <span className="flex-1 text-left">
+                    {showOther ? "Hide" : "Discover"} {displayOther.length} more
+                    resource{displayOther.length > 1 ? "s" : ""}
+                  </span>
                   <ChevronDown
                     className={cn(
-                      "size-3.5 transition-transform duration-200",
+                      "size-4 transition-transform duration-200",
                       showOther && "rotate-180"
                     )}
                   />
-                  {showOther ? "Hide" : "Show"} {displayOther.length} other
-                  matching resource{displayOther.length > 1 ? "s" : ""}
                 </button>
 
                 {showOther && (
-                  <div className="flex flex-col gap-2.5 mt-2.5 animate-in fade-in slide-in-from-top-2 duration-300">
+                  <div className="flex flex-col gap-3 mt-3 animate-in fade-in slide-in-from-top-2 duration-300">
                     {displayOther.map((resource, i) => (
                       <ResourceCard
                         key={resource.name}
@@ -367,7 +404,7 @@ export function Chatbot() {
       </div>
 
       {/* Input / Option Area */}
-      <div className="border-t border-border bg-muted/30 px-4 py-3.5">
+      <div className="border-t border-border/50 bg-gradient-to-t from-muted/50 to-card px-4 py-4">
         {showOptions && currentStep === "stage" && (
           <OptionGrid>
             {STARTUP_STAGES.map((s) => (
@@ -402,12 +439,12 @@ export function Chatbot() {
               <button
                 key={u.value}
                 onClick={() => handleUserTypeSelect(u.value)}
-                className="flex-1 flex items-center justify-center gap-2.5 rounded-xl border border-border bg-card px-4 py-3.5 text-sm font-medium text-foreground transition-all hover:border-primary hover:bg-primary/5 hover:shadow-sm active:scale-[0.98] cursor-pointer"
+                className="flex-1 flex items-center justify-center gap-2.5 rounded-2xl border-2 border-border bg-card px-4 py-4 text-sm font-medium text-foreground transition-all hover:border-primary hover:bg-primary/5 hover:shadow-md active:scale-[0.98] cursor-pointer"
               >
                 {u.value === "student" ? (
                   <GraduationCap className="size-5 text-primary" />
                 ) : (
-                  <BookOpen className="size-5 text-primary" />
+                  <Heart className="size-5 text-primary" />
                 )}
                 {u.label}
               </button>
@@ -418,16 +455,21 @@ export function Chatbot() {
         {showOptions && currentStep === "results" && (
           <button
             onClick={handleRestart}
-            className="flex items-center justify-center gap-2 w-full rounded-xl bg-primary text-primary-foreground px-4 py-3 text-sm font-medium transition-all hover:opacity-90 active:scale-[0.98] cursor-pointer"
+            className="flex items-center justify-center gap-2 w-full rounded-2xl bg-gradient-to-r from-primary to-primary/90 text-primary-foreground px-4 py-3.5 text-sm font-semibold transition-all hover:shadow-lg hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
           >
             <RotateCcw className="size-4" />
-            Search for more resources
+            Explore more resources
           </button>
         )}
 
         {(isTyping || currentStep === "greeting") && (
-          <div className="text-center text-xs text-muted-foreground py-1.5 select-none">
-            Mac Startup Guide is typing...
+          <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground py-2 select-none">
+            <span className="inline-flex gap-0.5">
+              <span className="size-1 rounded-full bg-primary animate-bounce [animation-delay:0ms]" />
+              <span className="size-1 rounded-full bg-primary animate-bounce [animation-delay:100ms]" />
+              <span className="size-1 rounded-full bg-primary animate-bounce [animation-delay:200ms]" />
+            </span>
+            Mac is thinking...
           </div>
         )}
       </div>
@@ -450,22 +492,22 @@ function ChatBubble({
   return (
     <div
       className={cn(
-        "flex items-end gap-2",
+        "flex items-end gap-2.5",
         !isBot && "flex-row-reverse",
         isLatest && "animate-in fade-in slide-in-from-bottom-1 duration-300"
       )}
     >
       {isBot && (
-        <div className="flex items-center justify-center size-7 shrink-0 rounded-full bg-primary text-primary-foreground text-[10px] font-bold">
+        <div className="flex items-center justify-center size-8 shrink-0 rounded-xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground text-xs font-bold shadow-sm">
           M
         </div>
       )}
       <div
         className={cn(
-          "max-w-[80%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed",
+          "max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm",
           isBot
-            ? "bg-secondary text-secondary-foreground rounded-bl-md"
-            : "bg-primary text-primary-foreground rounded-br-md"
+            ? "bg-secondary text-secondary-foreground rounded-bl-lg"
+            : "bg-gradient-to-br from-primary to-primary/90 text-primary-foreground rounded-br-lg"
         )}
       >
         {children}
@@ -476,14 +518,14 @@ function ChatBubble({
 
 function TypingIndicator() {
   return (
-    <div className="flex items-end gap-2 animate-in fade-in duration-200">
-      <div className="flex items-center justify-center size-7 shrink-0 rounded-full bg-primary text-primary-foreground text-[10px] font-bold">
+    <div className="flex items-end gap-2.5 animate-in fade-in duration-200">
+      <div className="flex items-center justify-center size-8 shrink-0 rounded-xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground text-xs font-bold shadow-sm">
         M
       </div>
-      <div className="flex gap-1 px-4 py-3 rounded-2xl rounded-bl-md bg-secondary">
-        <span className="size-1.5 rounded-full bg-muted-foreground animate-bounce [animation-delay:0ms]" />
-        <span className="size-1.5 rounded-full bg-muted-foreground animate-bounce [animation-delay:150ms]" />
-        <span className="size-1.5 rounded-full bg-muted-foreground animate-bounce [animation-delay:300ms]" />
+      <div className="flex gap-1.5 px-4 py-3.5 rounded-2xl rounded-bl-lg bg-secondary shadow-sm">
+        <span className="size-2 rounded-full bg-muted-foreground/60 animate-bounce [animation-delay:0ms]" />
+        <span className="size-2 rounded-full bg-muted-foreground/60 animate-bounce [animation-delay:150ms]" />
+        <span className="size-2 rounded-full bg-muted-foreground/60 animate-bounce [animation-delay:300ms]" />
       </div>
     </div>
   )
@@ -491,7 +533,7 @@ function TypingIndicator() {
 
 function OptionGrid({ children }: { children: React.ReactNode }) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 animate-in fade-in slide-in-from-bottom-2 duration-300">
       {children}
     </div>
   )
@@ -511,13 +553,13 @@ function OptionButton({
   return (
     <button
       onClick={onClick}
-      className="group flex items-start gap-3 rounded-xl border border-border bg-card p-3 text-left transition-all hover:border-primary hover:bg-primary/5 hover:shadow-sm active:scale-[0.98] cursor-pointer"
+      className="group flex items-start gap-3 rounded-2xl border-2 border-border bg-card p-3.5 text-left transition-all hover:border-primary hover:bg-primary/5 hover:shadow-md active:scale-[0.98] cursor-pointer"
     >
-      <div className="flex items-center justify-center size-8 shrink-0 rounded-lg bg-primary/10 text-primary transition-colors group-hover:bg-primary/20">
+      <div className="flex items-center justify-center size-9 shrink-0 rounded-xl bg-primary/10 text-primary transition-all group-hover:bg-primary group-hover:text-primary-foreground group-hover:scale-105">
         {icon}
       </div>
       <div className="min-w-0">
-        <p className="text-sm font-medium text-foreground flex items-center gap-1">
+        <p className="text-sm font-semibold text-foreground flex items-center gap-1.5">
           {label}
           <ArrowRight className="size-3 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all text-primary" />
         </p>
@@ -542,8 +584,8 @@ function ResourceCard({
       href={resource.link}
       target="_blank"
       rel="noopener noreferrer"
-      className="group block rounded-xl border border-border bg-card p-4 transition-all hover:border-primary/40 hover:shadow-md animate-in fade-in slide-in-from-bottom-1 duration-300"
-      style={{ animationDelay: `${index * 60}ms` }}
+      className="group block rounded-2xl border-2 border-border bg-card p-4 transition-all hover:border-primary/50 hover:shadow-lg hover:-translate-y-0.5 animate-in fade-in slide-in-from-bottom-1 duration-300"
+      style={{ animationDelay: `${index * 80}ms` }}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
@@ -562,24 +604,26 @@ function ResourceCard({
             </span>
           </div>
         </div>
-        <ExternalLink className="size-3.5 shrink-0 text-muted-foreground group-hover:text-primary transition-colors mt-0.5" />
+        <div className="flex items-center justify-center size-7 rounded-lg bg-muted/50 group-hover:bg-primary group-hover:text-primary-foreground transition-all shrink-0">
+          <ExternalLink className="size-3.5" />
+        </div>
       </div>
 
-      <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+      <p className="text-xs text-muted-foreground mt-2.5 leading-relaxed">
         {resource.description}
       </p>
 
       {/* Metadata row */}
-      <div className="flex flex-wrap items-center gap-3 mt-3 pt-2.5 border-t border-border/50">
-        <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+      <div className="flex flex-wrap items-center gap-3 mt-3 pt-3 border-t border-border/50">
+        <span className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground">
           <Calendar className="size-3" />
           {resource.deadline}
         </span>
-        <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+        <span className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground">
           <Users className="size-3" />
           {resource.audience}
         </span>
-        <span className="inline-flex items-center gap-1 rounded-full bg-primary/8 px-2 py-0.5 text-[10px] font-medium text-primary">
+        <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
           {resource.stage === "All" ? "All Stages" : resource.stage}
         </span>
       </div>
