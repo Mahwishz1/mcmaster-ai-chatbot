@@ -4,7 +4,7 @@
 // ---------------------------------------------------------------------------
 
 export type StartupStage = "idea" | "early-stage" | "scaling"
-export type SupportType = "workshop" | "funding" | "event" | "pitch"
+export type SupportType = "workshop" | "funding" | "event" | "pitch" | "mentorship"
 export type UserType = "student" | "alumni"
 
 export interface Resource {
