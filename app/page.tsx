@@ -20,7 +20,7 @@ export default function Page() {
       <div className="flex-1 flex flex-col">
         {/* Hero section */}
         <section className="mx-auto max-w-5xl px-4 pt-10 md:pt-14 pb-6 md:pb-8 text-center">
-          <div className="mx-auto mb-6 size-32 md:size-40">
+          <div className="mx-auto mb-6 size-40 md:size-52">
             <img 
               src="/mascot.png" 
               alt="Mac the McMaster mascot" 
