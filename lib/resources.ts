@@ -41,6 +41,11 @@ export const CATEGORY_META: Record<
     color: "bg-rose-100 text-rose-800",
     icon: "mic",
   },
+  mentorship: {
+    label: "Mentorship",
+    color: "bg-purple-100 text-purple-800",
+    icon: "handshake",
+  },
 }
 
 export const STARTUP_STAGES: {
@@ -89,6 +94,11 @@ export const SUPPORT_TYPES: {
     value: "pitch",
     label: "Pitch Competitions",
     description: "Present your startup to judges for prizes and feedback",
+  },
+  {
+    value: "mentorship",
+    label: "Mentorship",
+    description: "Connect with experienced mentors for guidance and advice",
   },
 ]
 
@@ -181,6 +191,36 @@ export const RESOURCES: Resource[] = [
       "Pitch your growing tech startup for funding and mentorship opportunities.",
     link: "https://www.mcmaster.ca/tech-pitch",
     deadline: "July 10, 2026",
+  },
+  {
+    name: "Latte",
+    category: "mentorship",
+    stage: "All",
+    audience: "Alumni",
+    description:
+      "Connect with experienced McMaster alumni mentors for personalized guidance on your entrepreneurial journey.",
+    link: "https://latte.mcmaster.ca",
+    deadline: "Ongoing",
+  },
+  {
+    name: "Founder Mentorship Program",
+    category: "mentorship",
+    stage: "Early-stage",
+    audience: "Students",
+    description:
+      "Get paired with a seasoned entrepreneur to help you navigate the early challenges of building your startup.",
+    link: "https://www.mcmaster.ca/founder-mentorship",
+    deadline: "September 1, 2026",
+  },
+  {
+    name: "Executive Mentor Network",
+    category: "mentorship",
+    stage: "Scaling",
+    audience: "Students & Alumni",
+    description:
+      "Access C-level executives and industry leaders for strategic advice as you scale your business.",
+    link: "https://www.mcmaster.ca/exec-mentors",
+    deadline: "Ongoing",
   },
 ]
 

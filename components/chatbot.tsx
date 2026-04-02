@@ -31,9 +31,11 @@ import {
   Sparkles,
   Heart,
   PartyPopper,
+  Handshake,
+  MessageCircle,
 } from "lucide-react"
 
-type Step = "greeting" | "stage" | "support" | "user-type" | "results"
+type Step = "intro" | "stage" | "support" | "user-type" | "results" | "typing"
 
 interface Message {
   id: string
@@ -52,21 +54,37 @@ const SUPPORT_ICONS: Record<SupportType, React.ReactNode> = {
   funding: <DollarSign className="size-4" />,
   event: <Users className="size-4" />,
   pitch: <Mic className="size-4" />,
+  mentorship: <Handshake className="size-4" />,
 }
 
-const STEPS_ORDER: Step[] = ["stage", "support", "user-type", "results"]
-const STEP_LABELS = ["Stage", "Support", "Status", "Results"]
+const INTRO_OPTIONS = [
+  { value: "explore", label: "Just exploring", description: "I want to see what's available" },
+  { value: "specific", label: "Looking for something specific", description: "I know what I need" },
+  { value: "stuck", label: "Feeling stuck", description: "I need some guidance" },
+  { value: "grow", label: "Ready to grow", description: "I want to take my startup further" },
+]
+
+const STEPS_ORDER: Step[] = ["intro", "stage", "support", "user-type", "results"]
+const STEP_LABELS = ["Hello", "Stage", "Resources", "Status", "Results"]
 
 // Friendly encouragement messages
+const INTRO_RESPONSES: Record<string, string> = {
+  explore: "Love that curiosity! Let's discover what McMaster has to offer.",
+  specific: "Great, you know what you want! Let's find it together.",
+  stuck: "We've all been there! Don't worry, I'll help you find your way.",
+  grow: "That's the spirit! Let's fuel that growth.",
+}
+
 const STAGE_RESPONSES = [
-  "Awesome! Love to hear it.",
-  "Great choice!",
-  "Perfect, got it!",
+  "Awesome! Every journey starts somewhere.",
+  "Great! That's a fantastic stage to be at.",
+  "Perfect, I know just what might help!",
 ]
+
 const SUPPORT_RESPONSES = [
-  "That's a great area to focus on!",
-  "Smart thinking!",
-  "Good call!",
+  "Great choice! This is so important.",
+  "Love it! Let's find the best options for you.",
+  "Smart thinking! I've got some ideas.",
 ]
 
 function getRandomResponse(arr: string[]) {
@@ -76,13 +94,14 @@ function getRandomResponse(arr: string[]) {
 // ── Step Progress Indicator ──────────────────────────────────────────────
 
 function StepIndicator({ currentStep }: { currentStep: Step }) {
-  const currentIndex = STEPS_ORDER.indexOf(currentStep)
+  const effectiveStep = currentStep === "typing" ? "results" : currentStep
+  const currentIndex = STEPS_ORDER.indexOf(effectiveStep)
 
   return (
     <div className="flex items-center gap-1 px-5 py-3 border-b border-border/40 bg-gradient-to-r from-card to-secondary/30">
       {STEPS_ORDER.map((step, i) => {
         const isComplete = i < currentIndex
-        const isCurrent = step === currentStep
+        const isCurrent = step === effectiveStep
         return (
           <div key={step} className="flex items-center gap-1 flex-1">
             <div className="flex items-center gap-1.5 flex-1">
@@ -145,15 +164,15 @@ export function Chatbot() {
       id: "greeting",
       role: "bot",
       content:
-        "Hi there! I'm Mac, your friendly startup guide. I'm excited to help you discover amazing resources at McMaster!",
+        "Hey there! I'm Mac, your friendly startup guide at McMaster. I'm here to help you find the perfect resources for your entrepreneurial journey.",
     },
     {
-      id: "stage-question",
+      id: "intro-question",
       role: "bot",
-      content: "First up - where are you on your startup journey?",
+      content: "First, tell me - what brings you here today? What are you hoping to find help with?",
     },
   ])
-  const [currentStep, setCurrentStep] = useState<Step>("stage")
+  const [currentStep, setCurrentStep] = useState<Step>("intro")
   const [stage, setStage] = useState<StartupStage | null>(null)
   const [support, setSupport] = useState<SupportType | null>(null)
   const [results, setResults] = useState<Resource[]>([])
@@ -168,20 +187,31 @@ export function Chatbot() {
     }
   }, [messages, isTyping, results, showOther])
 
-  const addMessages = useCallback(
-    (botContent: string, nextStep: Step) => {
-      setIsTyping(true)
-      setTimeout(() => {
-        setMessages((prev) => [
-          ...prev,
-          { id: `bot-${Date.now()}`, role: "bot", content: botContent },
-        ])
-        setIsTyping(false)
-        setCurrentStep(nextStep)
-      }, 800)
-    },
-    []
-  )
+  const addBotMessage = useCallback((content: string, nextStep: Step) => {
+    setIsTyping(true)
+    setCurrentStep("typing")
+    setTimeout(() => {
+      setMessages((prev) => [
+        ...prev,
+        { id: `bot-${Date.now()}`, role: "bot", content },
+      ])
+      setIsTyping(false)
+      setCurrentStep(nextStep)
+    }, 900)
+  }, [])
+
+  function handleIntroSelect(value: string) {
+    const option = INTRO_OPTIONS.find((o) => o.value === value)
+    setMessages((prev) => [
+      ...prev,
+      { id: `user-intro-${Date.now()}`, role: "user", content: option?.label ?? value },
+    ])
+    const response = INTRO_RESPONSES[value] ?? "Great! Let's get started."
+    addBotMessage(
+      `${response} Now, what stage are you in your entrepreneurial journey?`,
+      "stage"
+    )
+  }
 
   function handleStageSelect(selected: StartupStage) {
     const label = STARTUP_STAGES.find((s) => s.value === selected)?.label ?? ""
@@ -190,9 +220,8 @@ export function Chatbot() {
       ...prev,
       { id: `user-stage-${Date.now()}`, role: "user", content: label },
     ])
-    setCurrentStep("greeting")
-    addMessages(
-      `${getRandomResponse(STAGE_RESPONSES)} Now, what kind of support would be most helpful for you right now?`,
+    addBotMessage(
+      `${getRandomResponse(STAGE_RESPONSES)} Now, what resources would you need to move forward?`,
       "support"
     )
   }
@@ -204,9 +233,8 @@ export function Chatbot() {
       ...prev,
       { id: `user-support-${Date.now()}`, role: "user", content: label },
     ])
-    setCurrentStep("greeting")
-    addMessages(
-      `${getRandomResponse(SUPPORT_RESPONSES)} One last thing - are you currently a student or an alum?`,
+    addBotMessage(
+      `${getRandomResponse(SUPPORT_RESPONSES)} Last question - are you currently a McMaster student or an alum?`,
       "user-type"
     )
   }
@@ -217,8 +245,8 @@ export function Chatbot() {
       ...prev,
       { id: `user-type-${Date.now()}`, role: "user", content: label },
     ])
-    setCurrentStep("greeting")
     setIsTyping(true)
+    setCurrentStep("typing")
 
     setTimeout(() => {
       const primary = getRecommendations(stage!, support!, selected)
@@ -237,7 +265,7 @@ export function Chatbot() {
 
       let resultMsg: string
       if (count > 0) {
-        resultMsg = `Wonderful! I found ${count} ${catLabel}${count > 1 ? "s" : ""} that I think you'll love!`
+        resultMsg = `Wonderful! I found ${count} ${catLabel}${count > 1 ? " options" : ""} that I think you'll love!`
         if (other.length > 0) {
           resultMsg += ` Plus ${other.length} bonus resource${other.length > 1 ? "s" : ""} you might want to check out.`
         }
@@ -254,7 +282,7 @@ export function Chatbot() {
       ])
       setIsTyping(false)
       setCurrentStep("results")
-    }, 1000)
+    }, 1200)
   }
 
   function handleRestart() {
@@ -263,38 +291,43 @@ export function Chatbot() {
     setResults([])
     setOtherResults([])
     setShowOther(false)
-    setCurrentStep("stage")
+    setCurrentStep("intro")
     setMessages([
       {
         id: `restart-${Date.now()}`,
         role: "bot",
         content:
-          "Ready for another round? Let's find you even more amazing resources! What stage is your startup at?",
+          "Ready for another round? I love your enthusiasm! Let's find you even more amazing resources.",
+      },
+      {
+        id: `restart-question-${Date.now()}`,
+        role: "bot",
+        content: "What are you looking to explore this time?",
       },
     ])
   }
 
-  const showOptions = !isTyping && currentStep !== "greeting"
+  const showOptions = !isTyping && currentStep !== "typing"
 
   const displayPrimary = results
   const displayOther = otherResults
 
   return (
-    <div className="flex flex-col h-full max-h-[760px] bg-card rounded-3xl border border-border/60 shadow-xl overflow-hidden">
+    <div className="flex flex-col h-full max-h-[800px] bg-card rounded-3xl border border-border/60 shadow-xl overflow-hidden">
       {/* Header */}
       <div className="flex items-center gap-3 px-5 py-4 bg-gradient-to-r from-primary to-primary/90 text-primary-foreground">
         <div className="relative">
-          <div className="flex items-center justify-center size-11 rounded-2xl bg-primary-foreground/20 backdrop-blur-sm shadow-inner">
-            <span className="text-xl">M</span>
+          <div className="flex items-center justify-center size-12 rounded-2xl bg-primary-foreground/20 backdrop-blur-sm shadow-inner">
+            <MessageCircle className="size-6" />
           </div>
-          <span className="absolute -bottom-0.5 -right-0.5 text-sm">👋</span>
+          <span className="absolute -bottom-0.5 -right-0.5 text-base">👋</span>
         </div>
         <div className="flex-1 min-w-0">
-          <h2 className="text-base font-semibold leading-tight">
-            Mac Startup Guide
+          <h2 className="text-lg font-semibold leading-tight">
+            Mac
           </h2>
           <p className="text-xs text-primary-foreground/80">
-            Here to help you succeed!
+            Your McMaster Startup Guide
           </p>
         </div>
         <div className="flex items-center gap-1.5 bg-primary-foreground/15 rounded-full px-2.5 py-1">
@@ -405,8 +438,27 @@ export function Chatbot() {
 
       {/* Input / Option Area */}
       <div className="border-t border-border/50 bg-gradient-to-t from-muted/50 to-card px-4 py-4">
+        {showOptions && currentStep === "intro" && (
+          <OptionGrid cols={2}>
+            {INTRO_OPTIONS.map((o) => (
+              <OptionButton
+                key={o.value}
+                icon={
+                  o.value === "explore" ? <Sparkles className="size-4" /> :
+                  o.value === "specific" ? <ArrowRight className="size-4" /> :
+                  o.value === "stuck" ? <Heart className="size-4" /> :
+                  <Rocket className="size-4" />
+                }
+                label={o.label}
+                description={o.description}
+                onClick={() => handleIntroSelect(o.value)}
+              />
+            ))}
+          </OptionGrid>
+        )}
+
         {showOptions && currentStep === "stage" && (
-          <OptionGrid>
+          <OptionGrid cols={3}>
             {STARTUP_STAGES.map((s) => (
               <OptionButton
                 key={s.value}
@@ -420,7 +472,7 @@ export function Chatbot() {
         )}
 
         {showOptions && currentStep === "support" && (
-          <OptionGrid>
+          <OptionGrid cols={3}>
             {SUPPORT_TYPES.map((s) => (
               <OptionButton
                 key={s.value}
@@ -462,12 +514,12 @@ export function Chatbot() {
           </button>
         )}
 
-        {(isTyping || currentStep === "greeting") && (
+        {(isTyping || currentStep === "typing") && (
           <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground py-2 select-none">
             <span className="inline-flex gap-0.5">
-              <span className="size-1 rounded-full bg-primary animate-bounce [animation-delay:0ms]" />
-              <span className="size-1 rounded-full bg-primary animate-bounce [animation-delay:100ms]" />
-              <span className="size-1 rounded-full bg-primary animate-bounce [animation-delay:200ms]" />
+              <span className="size-1.5 rounded-full bg-primary animate-bounce [animation-delay:0ms]" />
+              <span className="size-1.5 rounded-full bg-primary animate-bounce [animation-delay:100ms]" />
+              <span className="size-1.5 rounded-full bg-primary animate-bounce [animation-delay:200ms]" />
             </span>
             Mac is thinking...
           </div>
@@ -499,7 +551,7 @@ function ChatBubble({
     >
       {isBot && (
         <div className="flex items-center justify-center size-8 shrink-0 rounded-xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground text-xs font-bold shadow-sm">
-          M
+          <MessageCircle className="size-4" />
         </div>
       )}
       <div
@@ -519,8 +571,8 @@ function ChatBubble({
 function TypingIndicator() {
   return (
     <div className="flex items-end gap-2.5 animate-in fade-in duration-200">
-      <div className="flex items-center justify-center size-8 shrink-0 rounded-xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground text-xs font-bold shadow-sm">
-        M
+      <div className="flex items-center justify-center size-8 shrink-0 rounded-xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-sm">
+        <MessageCircle className="size-4" />
       </div>
       <div className="flex gap-1.5 px-4 py-3.5 rounded-2xl rounded-bl-lg bg-secondary shadow-sm">
         <span className="size-2 rounded-full bg-muted-foreground/60 animate-bounce [animation-delay:0ms]" />
@@ -531,9 +583,12 @@ function TypingIndicator() {
   )
 }
 
-function OptionGrid({ children }: { children: React.ReactNode }) {
+function OptionGrid({ children, cols = 2 }: { children: React.ReactNode; cols?: 2 | 3 }) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 animate-in fade-in slide-in-from-bottom-2 duration-300">
+    <div className={cn(
+      "grid gap-2.5 animate-in fade-in slide-in-from-bottom-2 duration-300",
+      cols === 2 ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1 sm:grid-cols-3"
+    )}>
       {children}
     </div>
   )
@@ -563,7 +618,7 @@ function OptionButton({
           {label}
           <ArrowRight className="size-3 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all text-primary" />
         </p>
-        <p className="text-xs text-muted-foreground mt-0.5 leading-snug">
+        <p className="text-xs text-muted-foreground mt-0.5 leading-snug line-clamp-2">
           {description}
         </p>
       </div>
@@ -578,55 +633,53 @@ function ResourceCard({
   resource: Resource
   index: number
 }) {
-  const catMeta = CATEGORY_META[resource.category]
+  const meta = CATEGORY_META[resource.category]
+
   return (
-    <a
-      href={resource.link}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="group block rounded-2xl border-2 border-border bg-card p-4 transition-all hover:border-primary/50 hover:shadow-lg hover:-translate-y-0.5 animate-in fade-in slide-in-from-bottom-1 duration-300"
+    <div
+      className="rounded-2xl border border-border bg-card p-4 shadow-sm transition-all hover:shadow-md hover:border-primary/30 animate-in fade-in slide-in-from-bottom-2 duration-300"
       style={{ animationDelay: `${index * 80}ms` }}
     >
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
-              {resource.name}
-            </h3>
-            <span
-              className={cn(
-                "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-semibold leading-none shrink-0",
-                catMeta.color
-              )}
-            >
-              {SUPPORT_ICONS[resource.category]}
-              {catMeta.label}
-            </span>
-          </div>
-        </div>
-        <div className="flex items-center justify-center size-7 rounded-lg bg-muted/50 group-hover:bg-primary group-hover:text-primary-foreground transition-all shrink-0">
-          <ExternalLink className="size-3.5" />
-        </div>
+      <div className="flex items-start justify-between gap-3 mb-2">
+        <h4 className="text-sm font-semibold text-foreground leading-tight">
+          {resource.name}
+        </h4>
+        <span
+          className={cn(
+            "shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full",
+            meta?.color ?? "bg-muted text-muted-foreground"
+          )}
+        >
+          {meta?.label ?? resource.category}
+        </span>
       </div>
 
-      <p className="text-xs text-muted-foreground mt-2.5 leading-relaxed">
+      <p className="text-xs text-muted-foreground leading-relaxed mb-3">
         {resource.description}
       </p>
 
-      {/* Metadata row */}
-      <div className="flex flex-wrap items-center gap-3 mt-3 pt-3 border-t border-border/50">
-        <span className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground">
-          <Calendar className="size-3" />
-          {resource.deadline}
-        </span>
-        <span className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground">
-          <Users className="size-3" />
-          {resource.audience}
-        </span>
-        <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
-          {resource.stage === "All" ? "All Stages" : resource.stage}
-        </span>
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+          <span className="flex items-center gap-1">
+            <Calendar className="size-3" />
+            {resource.deadline}
+          </span>
+          <span className="flex items-center gap-1">
+            <Users className="size-3" />
+            {resource.audience}
+          </span>
+        </div>
+
+        <a
+          href={resource.link}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline underline-offset-2"
+        >
+          Learn more
+          <ExternalLink className="size-3" />
+        </a>
       </div>
-    </a>
+    </div>
   )
 }
