@@ -318,9 +318,9 @@ export function Chatbot() {
         <div className="relative">
           <div className="flex items-center justify-center size-12 rounded-2xl bg-primary-foreground/20 backdrop-blur-sm shadow-inner overflow-hidden">
             <img 
-              src="/mascot.jpg" 
+              src="/mascot.png" 
               alt="Mac the McMaster mascot" 
-              className="size-12 object-cover"
+              className="size-12 object-contain"
             />
           </div>
           <span className="absolute -bottom-0.5 -right-0.5 text-base">👋</span>
@@ -555,9 +555,9 @@ function ChatBubble({
       {isBot && (
         <div className="flex items-center justify-center size-8 shrink-0 rounded-xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground text-xs font-bold shadow-sm overflow-hidden">
           <img 
-            src="/mascot.jpg" 
+            src="/mascot.png" 
             alt="Mac" 
-            className="size-8 object-cover"
+            className="size-8 object-contain"
           />
         </div>
       )}

@@ -20,11 +20,11 @@ export default function Page() {
       <div className="flex-1 flex flex-col">
         {/* Hero section */}
         <section className="mx-auto max-w-5xl px-4 pt-10 md:pt-14 pb-6 md:pb-8 text-center">
-          <div className="mx-auto mb-6 size-28 md:size-32 rounded-3xl overflow-hidden shadow-lg border-4 border-primary/20 bg-card">
+          <div className="mx-auto mb-6 size-32 md:size-40">
             <img 
-              src="/mascot.jpg" 
+              src="/mascot.png" 
               alt="Mac the McMaster mascot" 
-              className="size-full object-cover"
+              className="size-full object-contain"
             />
           </div>
           <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-xs font-medium text-primary mb-5">
