@@ -32,7 +32,6 @@ import {
   Heart,
   PartyPopper,
   Handshake,
-  MessageCircle,
 } from "lucide-react"
 
 type Step = "intro" | "stage" | "support" | "user-type" | "results" | "typing"
@@ -317,8 +316,12 @@ export function Chatbot() {
       {/* Header */}
       <div className="flex items-center gap-3 px-5 py-4 bg-gradient-to-r from-primary to-primary/90 text-primary-foreground">
         <div className="relative">
-          <div className="flex items-center justify-center size-12 rounded-2xl bg-primary-foreground/20 backdrop-blur-sm shadow-inner">
-            <MessageCircle className="size-6" />
+          <div className="flex items-center justify-center size-12 rounded-2xl bg-primary-foreground/20 backdrop-blur-sm shadow-inner overflow-hidden">
+            <img 
+              src="/mascot.jpg" 
+              alt="Mac the McMaster mascot" 
+              className="size-12 object-cover"
+            />
           </div>
           <span className="absolute -bottom-0.5 -right-0.5 text-base">👋</span>
         </div>
@@ -550,8 +553,12 @@ function ChatBubble({
       )}
     >
       {isBot && (
-        <div className="flex items-center justify-center size-8 shrink-0 rounded-xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground text-xs font-bold shadow-sm">
-          <MessageCircle className="size-4" />
+        <div className="flex items-center justify-center size-8 shrink-0 rounded-xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground text-xs font-bold shadow-sm overflow-hidden">
+          <img 
+            src="/mascot.jpg" 
+            alt="Mac" 
+            className="size-8 object-cover"
+          />
         </div>
       )}
       <div
