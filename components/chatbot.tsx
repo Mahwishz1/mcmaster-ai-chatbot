@@ -32,6 +32,8 @@ import {
   Heart,
   PartyPopper,
   Handshake,
+  Send,
+  MessageCircle,
 } from "lucide-react"
 
 type Step = "intro" | "stage" | "support" | "user-type" | "results" | "typing"
@@ -178,7 +180,9 @@ export function Chatbot() {
   const [otherResults, setOtherResults] = useState<Resource[]>([])
   const [showOther, setShowOther] = useState(false)
   const [isTyping, setIsTyping] = useState(false)
+  const [inputValue, setInputValue] = useState("")
   const scrollRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -304,6 +308,97 @@ export function Chatbot() {
         content: "What are you looking to explore this time?",
       },
     ])
+  }
+
+  function handleTextSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    const text = inputValue.trim()
+    if (!text || isTyping) return
+
+    // Add user message
+    setMessages((prev) => [
+      ...prev,
+      { id: `user-text-${Date.now()}`, role: "user", content: text },
+    ])
+    setInputValue("")
+
+    // Process the text input
+    const lowerText = text.toLowerCase()
+    
+    setIsTyping(true)
+    setCurrentStep("typing")
+
+    setTimeout(() => {
+      let response = ""
+      let nextStep: Step = currentStep
+
+      // Keyword-based responses based on current step and content
+      if (lowerText.includes("funding") || lowerText.includes("money") || lowerText.includes("grant") || lowerText.includes("investment")) {
+        response = "Great, you're looking for funding opportunities! Let me help you find the right ones. First, what stage is your startup at?"
+        setSupport("funding")
+        nextStep = "stage"
+      } else if (lowerText.includes("mentor") || lowerText.includes("advice") || lowerText.includes("guidance") || lowerText.includes("coach")) {
+        response = "Mentorship is so valuable! I know some great programs. What stage is your startup at?"
+        setSupport("mentorship")
+        nextStep = "stage"
+      } else if (lowerText.includes("workshop") || lowerText.includes("learn") || lowerText.includes("training") || lowerText.includes("skill")) {
+        response = "Workshops are a great way to level up! Let's find the right ones for you. What stage is your startup at?"
+        setSupport("workshop")
+        nextStep = "stage"
+      } else if (lowerText.includes("pitch") || lowerText.includes("competition") || lowerText.includes("contest") || lowerText.includes("present")) {
+        response = "Pitch competitions are exciting! Let me find some for you. What stage is your startup at?"
+        setSupport("pitch")
+        nextStep = "stage"
+      } else if (lowerText.includes("event") || lowerText.includes("network") || lowerText.includes("meet") || lowerText.includes("connect")) {
+        response = "Networking is key! I'll help you find great events. What stage is your startup at?"
+        setSupport("event")
+        nextStep = "stage"
+      } else if (lowerText.includes("idea") || lowerText.includes("just started") || lowerText.includes("beginning") || lowerText.includes("new")) {
+        response = "Exciting times at the idea stage! What kind of support are you looking for?"
+        setStage("idea")
+        nextStep = "support"
+      } else if (lowerText.includes("early") || lowerText.includes("started") || lowerText.includes("building")) {
+        response = "The early stage is full of energy! What kind of support would help you most?"
+        setStage("early-stage")
+        nextStep = "support"
+      } else if (lowerText.includes("scaling") || lowerText.includes("growing") || lowerText.includes("expand")) {
+        response = "Scaling is an exciting challenge! What kind of support are you looking for?"
+        setStage("scaling")
+        nextStep = "support"
+      } else if (lowerText.includes("student")) {
+        if (stage && support) {
+          // If we have stage and support, process results
+          handleUserTypeSelect("student")
+          return
+        }
+        response = "Great, you're a McMaster student! What stage is your startup at?"
+        nextStep = "stage"
+      } else if (lowerText.includes("alumni") || lowerText.includes("graduated")) {
+        if (stage && support) {
+          handleUserTypeSelect("alumni")
+          return
+        }
+        response = "Wonderful to have McMaster alumni here! What stage is your startup at?"
+        nextStep = "stage"
+      } else if (lowerText.includes("help") || lowerText.includes("what can you do")) {
+        response = "I can help you find McMaster resources like funding opportunities, workshops, pitch competitions, mentorship programs, and networking events. Just tell me what you're looking for, or select an option below!"
+        nextStep = currentStep
+      } else if (lowerText.includes("latte")) {
+        response = "Latte is a great mentorship platform for McMaster alumni! Would you like me to find it for you? Just let me know your startup stage and I'll show you relevant mentorship resources."
+        nextStep = currentStep
+      } else {
+        // Default response - encourage using the options
+        response = "I'd love to help! To give you the best recommendations, could you either type what you're looking for (like 'funding' or 'mentorship') or select one of the options below?"
+        nextStep = currentStep
+      }
+
+      setMessages((prev) => [
+        ...prev,
+        { id: `bot-response-${Date.now()}`, role: "bot", content: response },
+      ])
+      setIsTyping(false)
+      setCurrentStep(nextStep)
+    }, 800)
   }
 
   const showOptions = !isTyping && currentStep !== "typing"
@@ -527,6 +622,28 @@ export function Chatbot() {
             Mac is thinking...
           </div>
         )}
+
+        {/* Text Input Field - Always visible */}
+        <form onSubmit={handleTextSubmit} className="mt-3 flex items-center gap-2">
+          <div className="relative flex-1">
+            <input
+              ref={inputRef}
+              type="text"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              placeholder="Type your question here..."
+              disabled={isTyping}
+              className="w-full rounded-2xl border-2 border-border bg-background px-4 py-3 pr-12 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            />
+            <button
+              type="submit"
+              disabled={isTyping || !inputValue.trim()}
+              className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center size-8 rounded-xl bg-primary text-primary-foreground disabled:opacity-40 disabled:cursor-not-allowed hover:bg-primary/90 transition-all active:scale-95 cursor-pointer"
+            >
+              <Send className="size-4" />
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   )
